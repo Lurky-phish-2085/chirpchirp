@@ -1,19 +1,18 @@
-import { ApiClient } from "@/lib/api-client";
-import { PostApi } from "@/lib/cms-api";
+import { strapiClient } from "@/lib/api-client";
 import { revalidatePath } from "next/cache";
 
-const api = ApiClient.use(PostApi);
+const postCollection = strapiClient.collection("posts");
 
 export default async function Home() {
-  const posts = await (await api.getPosts()).data;
+  const posts = await postCollection.find({
+    sort: "createdAt:desc",
+  });
 
   async function create(formData: FormData) {
     "use server";
 
-    await api.postPosts({
-      data: {
-        content: formData.get("content")?.toString() ?? "",
-      },
+    await postCollection.create({
+      content: formData.get("content"),
     });
 
     revalidatePath("/");
@@ -21,13 +20,9 @@ export default async function Home() {
   async function remove(formData: FormData) {
     "use server";
 
-    console.log(formData.get("post-id"));
+    const documentId = formData.get("post-id");
 
-    const response = await api.deletePostsId(
-      Number(formData.get("post-id")?.toString()) ?? 0
-    );
-
-    console.log(response.status);
+    await postCollection.delete(documentId?.toString() ?? "");
 
     revalidatePath("/");
   }
@@ -60,36 +55,34 @@ export default async function Home() {
         </form>
       </div>
       <div>
-        {posts.data
-          ?.map((post) => (
-            <div
-              key={post.documentId}
-              className="p-4 mb-3 bg-gray-100 border border-gray-300 rounded shadow-sm flex flex-col gap-3"
-            >
-              <div>
-                <p className="text-base font-medium text-gray-800">
-                  {post.content}
-                </p>
-                <p className="text-sm text-gray-600">{post.createdAt}</p>
-              </div>
-              <form action={remove}>
-                <input
-                  id="post-id"
-                  name="post-id"
-                  type="text"
-                  defaultValue={post.id ?? ""}
-                  hidden
-                />
-                <button
-                  type="submit"
-                  className="w-28 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded hover:bg-red-600 focus:outline-none focus:ring focus:ring-red-300"
-                >
-                  Delete
-                </button>
-              </form>
+        {posts.data?.map((post) => (
+          <div
+            key={post.documentId}
+            className="p-4 mb-3 bg-gray-100 border border-gray-300 rounded shadow-sm flex flex-col gap-3"
+          >
+            <div>
+              <p className="text-base font-medium text-gray-800">
+                {post.content}
+              </p>
+              <p className="text-sm text-gray-600">{post.createdAt}</p>
             </div>
-          ))
-          .reverse()}
+            <form action={remove}>
+              <input
+                id="post-id"
+                name="post-id"
+                type="text"
+                defaultValue={post.documentId ?? ""}
+                hidden
+              />
+              <button
+                type="submit"
+                className="w-28 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded hover:bg-red-600 focus:outline-none focus:ring focus:ring-red-300"
+              >
+                Delete
+              </button>
+            </form>
+          </div>
+        ))}
       </div>
     </div>
   );
