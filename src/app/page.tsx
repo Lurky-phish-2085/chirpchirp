@@ -1,5 +1,6 @@
 import { strapiClient } from "@/lib/api-client";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 
 const postCollection = strapiClient.collection("posts");
 
@@ -74,12 +75,19 @@ export default async function Home() {
                 defaultValue={post.documentId ?? ""}
                 hidden
               />
-              <button
-                type="submit"
-                className="w-28 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded hover:bg-red-600 focus:outline-none focus:ring focus:ring-red-300"
-              >
-                Delete
-              </button>
+              <div className=" flex gap-4">
+                <Link href={`/post/${post.documentId}/edit`}>
+                  <button className="w-28 px-3 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-600 focus:outline-none focus:ring focus:ring-red-300">
+                    Edit
+                  </button>
+                </Link>
+                <button
+                  type="submit"
+                  className="w-28 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded hover:bg-red-600 focus:outline-none focus:ring focus:ring-red-300"
+                >
+                  Delete
+                </button>
+              </div>
             </form>
           </div>
         ))}
