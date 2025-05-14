@@ -1,23 +1,24 @@
-import { strapiClient } from "@/lib/api-client";
+import { StrapiClient } from "@/lib/api-client";
+import { Post } from "@/lib/types";
 import { redirect, RedirectType } from "next/navigation";
 
 type Props = {
   params: { id: string };
 };
 
-const postCollection = strapiClient.collection("posts");
+const postCollection = new StrapiClient<Post>("posts");
 
 export default async function Page({ params }: Props) {
   const { id } = await params;
 
-  const post = await postCollection.findOne(id);
+  const post = await postCollection.find(id);
 
   async function edit(formData: FormData) {
     "use server";
 
     await postCollection
       .update(formData.get("post-id")?.toString() ?? "", {
-        content: formData.get("content"),
+        content: formData.get("content")?.toString() ?? "",
       })
       .catch((error) => {
         console.error(error);
@@ -30,7 +31,7 @@ export default async function Page({ params }: Props) {
   return (
     <div>
       <h1>{id}</h1>
-      <h2>{post.data.createdAt}</h2>
+      <h2>{post.createdAt}</h2>
       <form
         action={edit}
         className="p-4 max-w-md mx-auto bg-gray-100 rounded shadow"
@@ -43,7 +44,7 @@ export default async function Page({ params }: Props) {
             id="post-id"
             name="post-id"
             type="text"
-            defaultValue={post.data.documentId}
+            defaultValue={post.documentId}
             hidden
           />
           <input
@@ -52,7 +53,7 @@ export default async function Page({ params }: Props) {
             name="content"
             id="content"
             placeholder="Type something..."
-            defaultValue={post.data.content}
+            defaultValue={post.content}
           />
         </label>
         <button
