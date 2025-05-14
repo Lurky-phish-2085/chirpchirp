@@ -1,19 +1,18 @@
-import { strapiClient } from "@/lib/api-client";
+import { StrapiClient } from "@/lib/api-client";
+import { Post } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 
-const postCollection = strapiClient.collection("posts");
+const postCollection = new StrapiClient<Post>("posts");
 
 export default async function Home() {
-  const posts = await postCollection.find({
-    sort: "createdAt:desc",
-  });
+  const posts = await postCollection.findAll({ sort: "createdAt:desc" });
 
   async function create(formData: FormData) {
     "use server";
 
     await postCollection.create({
-      content: formData.get("content"),
+      content: formData.get("content")?.toString() ?? "",
     });
 
     revalidatePath("/");
@@ -23,7 +22,9 @@ export default async function Home() {
 
     const documentId = formData.get("post-id");
 
-    await postCollection.delete(documentId?.toString() ?? "");
+    await postCollection.delete({
+      id: documentId?.toString() ?? "",
+    });
 
     revalidatePath("/");
   }
@@ -56,7 +57,7 @@ export default async function Home() {
         </form>
       </div>
       <div>
-        {posts.data?.map((post) => (
+        {posts.map((post) => (
           <div
             key={post.documentId}
             className="p-4 mb-3 bg-gray-100 border border-gray-300 rounded shadow-sm flex flex-col gap-3"
